@@ -1,0 +1,379 @@
+/* assets/css/style.css - Main UI Styles for Kiryana Store System */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap');
+
+/* Urdu Font Fallback Definition */
+@font-face {
+    font-family: 'UrduNastaliq';
+    src: local('Jameel Noori Nastaleeq'), local('Noto Nastaliq Urdu'), local('Urdu Typesetting');
+    unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF;
+}
+
+:root {
+    --primary-color: #166534; /* Kiryana Grocery Green */
+    --primary-hover: #14532d;
+    --primary-light: #dcfce7;
+    --secondary-color: #0284c7;
+    --accent-color: #f59e0b;
+    --danger-color: #ef4444;
+    --dark-color: #1e293b;
+    --light-bg: #f8fafc;
+    --card-border: #e2e8f0;
+    --text-muted: #64748b;
+    --urdu-font: 'UrduNastaliq', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', Tahoma, sans-serif;
+}
+
+body {
+    font-family: 'Inter', var(--urdu-font), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--light-bg);
+    color: #1e293b;
+    margin: 0;
+    padding: 0;
+    font-size: 0.92rem;
+    line-height: 1.6;
+}
+
+/* Ensure Urdu text in English version uses Noto Nastaliq Urdu (primary) then fallbacks */
+.urdu-text, [lang="ur"], .name-ur, .pos-card-name, .brand-text {
+    font-family: 'Noto Nastaliq Urdu', 'UrduNastaliq', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', Tahoma, sans-serif !important;
+    line-height: 2.2;
+}
+
+/* Navbar */
+.top-navbar {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--card-border);
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+.brand-text {
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--primary-color);
+}
+
+/* Layout Wrapper */
+.app-wrapper {
+    display: flex;
+    height: calc(100vh - 60px); /* fixed height so children can scroll independently */
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: #ffffff;
+    border-right: 1px solid var(--card-border);
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    overflow-y: auto;
+    height: calc(100vh - 60px); /* full height minus top navbar */
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 12px 8px;
+    margin: 0;
+}
+
+.sidebar-menu li a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    color: #475569;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 500;
+    margin-bottom: 3px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-menu li a:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+}
+
+.sidebar-menu li a.active {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.sidebar-menu li a i {
+    font-size: 1.1rem;
+    width: 22px;
+    text-align: center;
+}
+
+.sidebar-heading {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 12px 14px 4px;
+    letter-spacing: 0.5px;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 24px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: calc(100vh - 60px);
+}
+
+/* Dashboard Cards */
+.kpi-card {
+    background: #ffffff;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.kpi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+}
+
+.kpi-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.kpi-value {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* POS Screen */
+.pos-container {
+    display: flex;
+    height: calc(100vh - 75px);
+    gap: 16px;
+    overflow-y: auto;
+}
+
+.pos-products-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid var(--card-border);
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.pos-cart-col {
+    width: 440px;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid var(--card-border);
+    padding: 16px;
+    overflow-y: auto;
+}
+
+@media (max-width: 992px) {
+    .pos-container {
+        flex-direction: column;
+        height: auto;
+    }
+    .pos-cart-col {
+        width: 100%;
+    }
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.product-pos-card {
+    background: #ffffff;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+    position: relative;
+}
+
+.product-pos-card:hover {
+    border-color: var(--primary-color);
+    background-color: #f0fdf4;
+    transform: scale(1.02);
+}
+
+.product-pos-card:active {
+    transform: scale(0.98);
+}
+
+.pos-card-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    line-height: 1.65;
+    margin-bottom: 4px;
+    min-height: 46px;
+    overflow-y: auto;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    font-family: var(--urdu-font);
+}
+
+.pos-card-price {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 0.95rem;
+}
+
+.pos-card-stock {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.cart-table-wrap {
+    flex-grow: 1;
+    overflow-y: auto;
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    margin: 12px 0;
+}
+
+.cart-table {
+    width: 100%;
+    margin-bottom: 0;
+    font-size: 0.85rem;
+}
+
+.cart-table th {
+    background-color: #f1f5f9;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 8px 6px;
+}
+
+.cart-table td {
+    padding: 8px 6px;
+    vertical-align: middle;
+}
+
+.qty-input {
+    width: 60px;
+    text-align: center;
+    font-weight: 600;
+    padding: 2px 4px;
+}
+
+.cart-summary {
+    background-color: #f8fafc;
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid var(--card-border);
+}
+
+.cart-total-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+}
+
+.cart-grand-total {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    border-top: 1px dashed var(--card-border);
+    padding-top: 8px;
+    margin-top: 6px;
+}
+
+/* Receipts Print */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #receipt-print-area, #receipt-print-area * {
+        visibility: visible;
+    }
+    #receipt-print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white;
+        color: black;
+        margin: 0;
+        padding: 5px;
+    }
+    .no-print {
+        display: none !important;
+    }
+}
+
+.receipt-80mm {
+    width: 78mm;
+    margin: 0 auto;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    line-height: 1.3;
+}
+
+.receipt-58mm {
+    width: 56mm;
+    margin: 0 auto;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    line-height: 1.2;
+}
+
+/* Badge helpers */
+.badge-soft-success { background: #dcfce7; color: #166534; }
+.badge-soft-warning { background: #fef3c7; color: #b45309; }
+.badge-soft-danger { background: #fee2e2; color: #991b1b; }
+.badge-soft-info { background: #e0f2fe; color: #0369a1; }
+
+/* Custom tables */
+.table th {
+    font-weight: 600;
+    color: #475569;
+    background-color: #f8fafc;
+    border-bottom: 1px solid var(--card-border);
+}
+
+/* Fast modal & alerts */
+.shortcut-badge {
+    background: #e2e8f0;
+    color: #475569;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
