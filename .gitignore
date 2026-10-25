@@ -1,0 +1,23 @@
+# Environment and local files
+.env
+.env.local
+
+# Database dumps / backups
+*.sql
+*.tar.gz
+*.zip
+backups/
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Log files
+*.log
+error_log
+npm-debug.log*

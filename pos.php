@@ -318,10 +318,27 @@ require_once __DIR__ . '/includes/header.php';
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="stopCameraScanner()"></button>
             </div>
             <div class="modal-body p-3 text-center">
-                <div class="mb-2 text-muted small">
-                    <i class="bi bi-info-circle me-1"></i> کیمرہ کے سامنے بارکوڈ لائیں، سسٹم خود بخود اسکین کر لے گا۔
+                <div class="mb-2 text-muted small d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <i class="bi bi-info-circle me-1"></i> بارکوڈ سامنے لائیں، خودکار زوم اور فوکس ہوگا۔
+                    </div>
+                    <!-- Quick Zoom In/Out Controls -->
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="small fw-semibold text-dark me-1" style="font-size: 11px;">زوم:</span>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Zoom controls">
+                            <button type="button" class="btn btn-outline-success px-2 py-0 fw-bold" onclick="adjustScannerZoom(-0.25)" title="زوم آؤٹ (Zoom Out)">
+                                <i class="bi bi-zoom-out"></i> -
+                            </button>
+                            <button type="button" class="btn btn-outline-success px-2 py-0" onclick="resetScannerZoom()" title="اصل سائز (1.0x Reset)">
+                                <span id="zoomLevelDisplay" class="fw-bold" style="font-size: 12px;">1.0x</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-success px-2 py-0 fw-bold" onclick="adjustScannerZoom(0.25)" title="زوم ان (Zoom In)">
+                                <i class="bi bi-zoom-in"></i> +
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div id="camera-reader" style="width: 100%; min-height: 280px; border-radius: 8px; overflow: hidden; background: #0f172a; display: flex; align-items: center; justify-content: center;" class="shadow-sm">
+                <div id="camera-reader" style="width: 100%; min-height: 280px; border-radius: 8px; overflow: hidden; background: #0f172a; display: flex; align-items: center; justify-content: center; position: relative; user-select: none;" class="shadow-sm">
                     <div class="text-white small p-3">
                         <div class="spinner-border spinner-border-sm text-success me-2" role="status"></div>
                         کیمرہ آن ہو رہا ہے... (Starting Camera...)

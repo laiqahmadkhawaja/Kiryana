@@ -656,7 +656,7 @@ function playBeep() {
 }
 
 // ==========================================
-// Live Camera Barcode Scanner — Auto Zoom & Align
+// Live Camera Barcode Scanner — Auto Zoom & Align + Zoom In/Out Modification
 // ==========================================
 let html5QrCodeScanner = null;
 let lastScannedCode = "";
@@ -670,13 +670,25 @@ let _scanCanvas = null;
 let _scanCtx = null;
 let _barcodeDetector = null;
 
-// Smooth zoom/crop animation state (video pixel coordinates)
+// Zoom state
+let _currentManualZoom = 1.0;
+let _maxZoom = 4.0;
+let _minZoom = 1.0;
+let _zoomTrack = null;
+
+// Smooth crop animation state (video pixel coordinates)
 let _zoomRect = null;
 let _targetRect = null;
+
+// Focus/Center alignment helper
+let _barcodeFoundTime = 0;
 
 function openCameraScanner() {
     const modalEl = document.getElementById('cameraScannerModal');
     if (!modalEl) return;
+
+    _currentManualZoom = 1.0;
+    updateZoomDisplay();
 
     const modal = new bootstrap.Modal(modalEl);
     modal.show();
@@ -692,11 +704,99 @@ function openCameraScanner() {
     });
 }
 
+function updateZoomDisplay() {
+    const el = document.getElementById('zoomLevelDisplay');
+    if (el) {
+        el.innerText = `${_currentManualZoom.toFixed(1)}x`;
+    }
+}
+
+function adjustScannerZoom(delta) {
+    const newZoom = Math.min(_maxZoom, Math.max(_minZoom, _currentManualZoom + delta));
+    setScannerZoom(newZoom);
+}
+
+function resetScannerZoom() {
+    setScannerZoom(1.0);
+}
+
+function setScannerZoom(zoomVal) {
+    _currentManualZoom = Math.round(zoomVal * 100) / 100;
+    updateZoomDisplay();
+
+    // Apply zoom whether on Native BarcodeDetector OR on html5-qrcode fallback!
+    
+    // 1. Hardware track zoom (applies to both modes if track is available)
+    let track = _zoomTrack;
+    if (!track && html5QrCodeScanner) {
+        try {
+            // Retrieve video element created by html5-qrcode
+            const videoElem = document.querySelector('#camera-reader video');
+            if (videoElem && videoElem.srcObject) {
+                const trks = videoElem.srcObject.getVideoTracks();
+                if (trks.length > 0) track = trks[0];
+            }
+        } catch (_) {}
+    }
+
+    let hwZoomApplied = false;
+    if (track && typeof track.getCapabilities === 'function') {
+        try {
+            const caps = track.getCapabilities();
+            if (caps.zoom) {
+                const hwMin = caps.zoom.min || 1;
+                const hwMax = caps.zoom.max || 1;
+                const hwVal = Math.min(hwMax, Math.max(hwMin, _currentManualZoom));
+                track.applyConstraints({ advanced: [{ zoom: hwVal }] }).then(() => {
+                    hwZoomApplied = true;
+                }).catch(() => {});
+            }
+        } catch (_) {}
+    }
+
+    // 2. Fallback / supplementary Digital CSS Zoom:
+    // If html5-qrcode is active or camera is rendering in video element,
+    // apply CSS transform scale directly to the video element for instant visual zoom!
+    const videoElem = document.querySelector('#camera-reader video');
+    if (videoElem && html5QrCodeScanner) {
+        videoElem.style.transition = 'transform 0.2s ease';
+        videoElem.style.transformOrigin = 'center center';
+        videoElem.style.transform = `scale(${_currentManualZoom})`;
+    }
+
+    // 3. Adjust digital canvas crop bounds immediately for native canvas scanner
+    if (_scanVideo && _scanVideo.videoWidth > 0) {
+        const vw = _scanVideo.videoWidth;
+        const vh = _scanVideo.videoHeight;
+        const cropW = vw / _currentManualZoom;
+        const cropH = vh / _currentManualZoom;
+        _targetRect = {
+            x: (vw - cropW) / 2,
+            y: (vh - cropH) / 2,
+            w: cropW,
+            h: cropH
+        };
+    }
+}
+
 function _handleScanResult(code) {
     const now = Date.now();
     if (code === lastScannedCode && (now - lastScanTime) < 1500) return;
     lastScannedCode = code;
     lastScanTime = now;
+
+    // Visual alignment highlight: flash green reticle
+    const box = document.getElementById('_scanBox');
+    if (box) {
+        box.style.borderColor = '#22c55e';
+        box.style.boxShadow = '0 0 15px rgba(34, 197, 94, 0.9)';
+        setTimeout(() => {
+            if (box) {
+                box.style.borderColor = 'rgba(74,222,128,0.9)';
+                box.style.boxShadow = '0 0 0 9999px rgba(0,0,0,0.38)';
+            }
+        }, 600);
+    }
 
     playBeep();
     showToast(`کیمرہ سے اسکین ہوا: ${code}`, "success");
@@ -712,6 +812,7 @@ function _handleScanResult(code) {
 
 // Smooth linear interpolation between two crop rectangles
 function _lerpRect(cur, tgt, t) {
+    if (!cur) return tgt;
     return {
         x: cur.x + (tgt.x - cur.x) * t,
         y: cur.y + (tgt.y - cur.y) * t,
@@ -724,38 +825,47 @@ function _startNativeScanner(readerEl) {
     readerEl.innerHTML = '';
     readerEl.style.position = 'relative';
 
-    // Hidden video element — actual render goes to canvas
+    // Hidden video element
     const video = document.createElement('video');
     video.setAttribute('playsinline', '');
     video.setAttribute('muted', '');
     video.style.cssText = 'position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;';
     readerEl.appendChild(video);
 
-    // Visible canvas — we draw the (optionally zoomed) frame here
+    // Visible canvas
     const canvas = document.createElement('canvas');
-    canvas.style.cssText = 'width:100%;height:100%;border-radius:8px;display:block;background:#0f172a;';
+    canvas.style.cssText = 'width:100%;height:100%;border-radius:8px;display:block;background:#0f172a;cursor:pointer;';
+    canvas.title = "ڈبل کلک یا ٹیپ سے زوم ان / زوم آؤٹ کریں (Double-click/tap to zoom)";
     readerEl.appendChild(canvas);
+
+    // Double-click or tap to toggle zoom
+    canvas.addEventListener('dblclick', () => {
+        if (_currentManualZoom > 1.2) {
+            resetScannerZoom();
+        } else {
+            setScannerZoom(2.0);
+        }
+    });
 
     // Targeting reticle overlay with animated scan line
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
     overlay.innerHTML = `
       <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
-        <div id="_scanBox" style="width:72%;height:46%;border:2px solid rgba(74,222,128,0.9);border-radius:6px;
-             box-shadow:0 0 0 9999px rgba(0,0,0,0.38);position:relative;transition:all 0.3s ease;">
-          <div style="position:absolute;top:-2px;left:-2px;width:20px;height:20px;border-top:3px solid #4ade80;border-left:3px solid #4ade80;border-radius:3px 0 0 0;"></div>
-          <div style="position:absolute;top:-2px;right:-2px;width:20px;height:20px;border-top:3px solid #4ade80;border-right:3px solid #4ade80;border-radius:0 3px 0 0;"></div>
-          <div style="position:absolute;bottom:-2px;left:-2px;width:20px;height:20px;border-bottom:3px solid #4ade80;border-left:3px solid #4ade80;border-radius:0 0 0 3px;"></div>
-          <div style="position:absolute;bottom:-2px;right:-2px;width:20px;height:20px;border-bottom:3px solid #4ade80;border-right:3px solid #4ade80;border-radius:0 0 3px 0;"></div>
+        <div id="_scanBox" style="width:78%;height:50%;border:2px solid rgba(74,222,128,0.9);border-radius:8px;
+             box-shadow:0 0 0 9999px rgba(0,0,0,0.38);position:relative;transition:border-color 0.2s, box-shadow 0.2s;">
+          <div style="position:absolute;top:-2px;left:-2px;width:22px;height:22px;border-top:3px solid #4ade80;border-left:3px solid #4ade80;border-radius:3px 0 0 0;"></div>
+          <div style="position:absolute;top:-2px;right:-2px;width:22px;height:22px;border-top:3px solid #4ade80;border-right:3px solid #4ade80;border-radius:0 3px 0 0;"></div>
+          <div style="position:absolute;bottom:-2px;left:-2px;width:22px;height:22px;border-bottom:3px solid #4ade80;border-left:3px solid #4ade80;border-radius:0 0 0 3px;"></div>
+          <div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-bottom:3px solid #4ade80;border-right:3px solid #4ade80;border-radius:0 0 3px 0;"></div>
           <div style="position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(to right,transparent,#4ade80,transparent);animation:_kScanline 1.6s linear infinite;"></div>
         </div>
-        <div style="position:absolute;bottom:12px;left:0;right:0;text-align:center;color:#e2e8f0;font-size:0.76rem;text-shadow:0 1px 3px #000;">
-          بارکوڈ کو مستطیل میں لائیں — خودکار زوم اور اسکین ہوگا
+        <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;color:#e2e8f0;font-size:0.75rem;text-shadow:0 1px 3px #000;">
+          خودکار الائن اور زوم فعال ہے | ڈبل ٹیپ سے زوم تبدیل کریں
         </div>
       </div>`;
     readerEl.appendChild(overlay);
 
-    // Inject keyframe animation once
     if (!document.getElementById('_kScanlineCSS')) {
         const st = document.createElement('style');
         st.id = '_kScanlineCSS';
@@ -771,9 +881,26 @@ function _startNativeScanner(readerEl) {
     });
 
     navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+        video: {
+            facingMode: 'environment',
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+        }
     }).then(stream => {
         _scanStream = stream;
+        const tracks = stream.getVideoTracks();
+        if (tracks.length > 0) {
+            _zoomTrack = tracks[0];
+            // Read hardware zoom capabilities if present
+            if (typeof _zoomTrack.getCapabilities === 'function') {
+                const caps = _zoomTrack.getCapabilities();
+                if (caps.zoom) {
+                    _minZoom = caps.zoom.min || 1;
+                    _maxZoom = caps.zoom.max || 4;
+                }
+            }
+        }
+
         video.srcObject = stream;
         video.play();
         video.addEventListener('loadedmetadata', () => {
@@ -798,38 +925,62 @@ function _nativeScanLoop() {
         return;
     }
 
-    const vw = _scanVideo.videoWidth, vh = _scanVideo.videoHeight;
-    const cw = _scanCanvas.width,    ch = _scanCanvas.height;
+    const vw = _scanVideo.videoWidth;
+    const vh = _scanVideo.videoHeight;
+    const cw = _scanCanvas.width;
+    const ch = _scanCanvas.height;
 
-    // Smooth zoom: lerp current crop toward target (t=0.08 ≈ ~12-frame ease)
-    _zoomRect = _lerpRect(_zoomRect, _targetRect, 0.08);
+    // Apply manual base zoom if user zoomed in/out
+    let baseW = vw / _currentManualZoom;
+    let baseH = vh / _currentManualZoom;
+    let baseX = (vw - baseW) / 2;
+    let baseY = (vh - baseH) / 2;
 
-    // Render the cropped/zoomed portion of the video to the canvas
+    if (!_targetRect) {
+        _targetRect = { x: baseX, y: baseY, w: baseW, h: baseH };
+    }
+
+    // Smooth ease toward target
+    _zoomRect = _lerpRect(_zoomRect, _targetRect, 0.10);
+
+    // Draw frame onto canvas
     _scanCtx.drawImage(_scanVideo, _zoomRect.x, _zoomRect.y, _zoomRect.w, _zoomRect.h, 0, 0, cw, ch);
 
-    // Detect barcodes asynchronously — doesn't block frame rendering
+    // Barcode detection on video source
     _barcodeDetector.detect(_scanVideo).then(codes => {
         if (!codes.length) {
-            // Gradually zoom back out to full frame when nothing detected
-            _targetRect = { x: 0, y: 0, w: vw, h: vh };
+            // Keep user manual zoom base rect
+            _targetRect = { x: baseX, y: baseY, w: baseW, h: baseH };
             return;
         }
 
         const bc = codes[0];
+        _barcodeFoundTime = Date.now();
         _handleScanResult(bc.rawValue);
 
-        // Compute a target crop centered on the barcode + 40% padding on each side
-        const bb  = bc.boundingBox;
-        const padX = bb.width  * 0.4, padY = bb.height * 0.4;
-        let nx = Math.max(0, bb.left   - padX);
-        let ny = Math.max(0, bb.top    - padY);
+        // Auto-align: Center and auto-zoom directly onto barcode bounding box
+        const bb = bc.boundingBox;
+        const padX = bb.width  * 0.5;
+        const padY = bb.height * 0.5;
+        let nx = Math.max(0, bb.left - padX);
+        let ny = Math.max(0, bb.top  - padY);
         let nw = Math.min(vw - nx, bb.width  + padX * 2);
         let nh = Math.min(vh - ny, bb.height + padY * 2);
 
-        // Don't zoom in tighter than 25% of frame (avoids extreme crops)
-        const minW = vw * 0.25, minH = vh * 0.25;
-        if (nw < minW) { nx = Math.max(0, bb.left + bb.width/2  - minW/2); nw = minW; }
-        if (nh < minH) { ny = Math.max(0, bb.top  + bb.height/2 - minH/2); nh = minH; }
+        // Maintain aspect ratio matching canvas
+        const aspect = cw / ch;
+        if (nw / nh > aspect) {
+            nh = nw / aspect;
+        } else {
+            nw = nh * aspect;
+        }
+
+        const minW = vw * 0.20;
+        const minH = vh * 0.20;
+        nw = Math.max(nw, minW);
+        nh = Math.max(nh, minH);
+        nx = Math.max(0, Math.min(vw - nw, (bb.left + bb.width / 2) - nw / 2));
+        ny = Math.max(0, Math.min(vh - nh, (bb.top  + bb.height / 2) - nh / 2));
 
         _targetRect = { x: nx, y: ny, w: nw, h: nh };
     }).catch(() => {});
@@ -845,16 +996,16 @@ function startCameraScanner() {
     const errEl = document.getElementById('camera-error');
     if (errEl) errEl.style.display = 'none';
 
-    // Prefer native BarcodeDetector — gives real per-frame auto-zoom (Chrome 83+, Android)
+    // 1. Native BarcodeDetector (Chrome 83+, Edge, Android WebView) with real-time dynamic zoom & align
     if ('BarcodeDetector' in window) {
         _startNativeScanner(readerEl);
         return;
     }
 
-    // Fallback: html5-qrcode library with wide qrbox and continuous-focus constraints
+    // 2. Fallback: html5-qrcode library
     if (typeof Html5Qrcode === "undefined") {
         if (errEl) {
-            errEl.innerText = "Camera scanner not supported on this browser. Please use Chrome on Android or Desktop.";
+            errEl.innerText = "Camera scanner library is loading. Please refresh or check connection.";
             errEl.style.display = 'block';
         }
         return;
@@ -872,19 +1023,21 @@ function startCameraScanner() {
             aspectRatio: 1.777778,
             videoConstraints: {
                 facingMode: "environment",
-                width: { ideal: 1280 }, height: { ideal: 720 },
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
                 advanced: [{ focusMode: "continuous" }]
             }
         },
         (decodedText) => _handleScanResult(decodedText),
         (_err) => {}
     ).then(() => {
-        // Attempt hardware zoom via Track Capabilities API
         try {
             const caps = html5QrCodeScanner.getRunningTrackCameraCapabilities();
             if (caps && typeof caps.zoomFeature === 'function') {
                 const zf = caps.zoomFeature();
-                if (zf && zf.isSupported()) zf.apply(Math.min(zf.min() * 2, zf.max()));
+                if (zf && zf.isSupported()) {
+                    zf.apply(Math.min(zf.min() * 1.5, zf.max()));
+                }
             }
         } catch (_) {}
     }).catch(err => {
@@ -896,17 +1049,31 @@ function startCameraScanner() {
 }
 
 function stopCameraScanner() {
-    // Stop native BarcodeDetector loop
-    if (_scanAnimFrame) { cancelAnimationFrame(_scanAnimFrame); _scanAnimFrame = null; }
-    if (_scanStream)    { _scanStream.getTracks().forEach(t => t.stop()); _scanStream = null; }
-    _scanVideo = _scanCanvas = _scanCtx = _barcodeDetector = null;
-    _zoomRect = _targetRect = null;
+    // Stop native scanner loop
+    if (_scanAnimFrame) {
+        cancelAnimationFrame(_scanAnimFrame);
+        _scanAnimFrame = null;
+    }
+    if (_scanStream) {
+        _scanStream.getTracks().forEach(t => t.stop());
+        _scanStream = null;
+    }
+    _zoomTrack = null;
+    _scanVideo = null;
+    _scanCanvas = null;
+    _scanCtx = null;
+    _barcodeDetector = null;
+    _zoomRect = null;
+    _targetRect = null;
+    _currentManualZoom = 1.0;
 
     // Stop html5-qrcode fallback
     if (html5QrCodeScanner) {
         html5QrCodeScanner.stop().then(() => {
             html5QrCodeScanner.clear();
             html5QrCodeScanner = null;
-        }).catch(() => { html5QrCodeScanner = null; });
+        }).catch(() => {
+            html5QrCodeScanner = null;
+        });
     }
 }
