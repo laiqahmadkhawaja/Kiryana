@@ -111,6 +111,15 @@ if ($action === 'save_sale') {
         exit;
     }
 
+    // Disallow credit or partial payment for walk-in / unregistered customers
+    if ($customer_id <= 0 && ($sale_type === 'credit' || $sale_type === 'split' || $balance_amount > 0 || $payment_method === 'Customer Credit' || $paid_amount < $grand_total)) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Walk-in customers cannot make credit purchases! عام خریدار کو ادھار پر بل جاری نہیں کیا جا سکتا۔ برائے مہربانی کھاتہ سے گاہک منتخب کریں۔'
+        ]);
+        exit;
+    }
+
     // Check active shift
     $shift = get_active_shift();
     $shift_id = $shift ? (int)$shift['id'] : 0;

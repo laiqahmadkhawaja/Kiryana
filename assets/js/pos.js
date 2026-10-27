@@ -77,6 +77,19 @@ function initPOS() {
     if (cashTendered) {
         cashTendered.addEventListener('input', calculateChange);
     }
+
+    // Modal Payment Method change listener (Block credit for walk-in)
+    const modalPaymentMethod = document.getElementById('modalPaymentMethod');
+    if (modalPaymentMethod) {
+        modalPaymentMethod.addEventListener('change', function () {
+            const isWalkIn = !selectedCustomer || selectedCustomer.id <= 0;
+            if (isWalkIn && this.value === 'Customer Credit') {
+                showToast("عام خریدار کے لیے ادھار ممکن نہیں! برائے مہربانی کھاتہ سے گاہک منتخب کریں۔", "error");
+                this.value = 'Cash';
+            }
+            updateModalChange();
+        });
+    }
 }
 
 // Setup Keyboard Hotkeys (F2, F4, F8, F9)
@@ -348,9 +361,22 @@ function triggerCheckout() {
 
         document.getElementById('modalTotalAmount').innerText = 'Rs. ' + grandTotal.toFixed(2);
         
-        // Default cash amount to grand total if empty
+        const isWalkIn = !selectedCustomer || selectedCustomer.id <= 0;
+        const optCredit = document.getElementById('optCustomerCredit') || document.querySelector('#modalPaymentMethod option[value="Customer Credit"]');
+        const paymentMethodSelect = document.getElementById('modalPaymentMethod');
+
+        if (optCredit) {
+            optCredit.disabled = isWalkIn;
+        }
+
+        if (isWalkIn && paymentMethodSelect && paymentMethodSelect.value === 'Customer Credit') {
+            paymentMethodSelect.value = 'Cash';
+        }
+
+        // Default cash amount to grand total if empty or if walk-in customer has less than total
         const modalCash = document.getElementById('modalPaidAmount');
-        if (!modalCash.value || parseFloat(modalCash.value) === 0) {
+        const currentPaid = parseFloat(modalCash.value) || 0;
+        if (!modalCash.value || currentPaid === 0 || (isWalkIn && currentPaid < grandTotal)) {
             modalCash.value = grandTotal;
         }
         updateModalChange();
@@ -375,6 +401,32 @@ function updateModalChange() {
 
     document.getElementById('modalChangeAmount').innerText = 'Rs. ' + change.toFixed(2);
     document.getElementById('modalBalanceAmount').innerText = 'Rs. ' + balance.toFixed(2);
+
+    const isWalkIn = !selectedCustomer || selectedCustomer.id <= 0;
+    const warningEl = document.getElementById('walkinCreditWarning');
+    const submitBtn = document.getElementById('btnSubmitSale');
+    const paymentMethodSelect = document.getElementById('modalPaymentMethod');
+    const isCreditMethod = paymentMethodSelect && paymentMethodSelect.value === 'Customer Credit';
+
+    // Strictly forbid credit/balance for walk-in customer
+    if (isWalkIn && (balance > 0 || isCreditMethod || paid < total)) {
+        if (warningEl) {
+            warningEl.classList.remove('d-none');
+            warningEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>عام خریدار (Walk-in) کے لیے ادھار ممکن نہیں ہے۔</strong> پورا کیش (Rs. ${total.toFixed(2)}) وصول کریں یا کھاتہ دار گاہک منتخب کریں۔`;
+        }
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50');
+            submitBtn.title = "عام خریدار کے لیے ادھار ممکن نہیں";
+        }
+    } else {
+        if (warningEl) warningEl.classList.add('d-none');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50');
+            submitBtn.removeAttribute('title');
+        }
+    }
 }
 
 // Process Complete Sale
@@ -408,6 +460,14 @@ function processSale(paymentMethodOverride = null) {
     // If credit or balance, ensure customer is selected
     const customerId = selectedCustomer ? selectedCustomer.id : 0;
     const customerName = selectedCustomer ? selectedCustomer.name : 'Walk-in Customer';
+    const isWalkIn = customerId <= 0;
+
+    // Strict validation: Walk-in customer cannot have credit or partial balance
+    if (isWalkIn && (balanceAmount > 0 || paymentMethod === 'Customer Credit' || paidAmount < grandTotal || saleType !== 'cash')) {
+        showToast("عام خریدار کو ادھار پر بل جاری نہیں کیا جا سکتا! برائے مہربانی پہلے کھاتہ سے گاہک منتخب کریں۔", "error");
+        updateModalChange();
+        return;
+    }
 
     if (balanceAmount > 0 && customerId <= 0) {
         showToast("Credit sale requires selecting a customer from Khata! ادھار فروخت کے لیے گاہک منتخب کریں۔", "error");

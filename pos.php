@@ -221,7 +221,7 @@ require_once __DIR__ . '/includes/header.php';
                         <option value="Easypaisa">ایزی پیسہ (Easypaisa)</option>
                         <option value="Bank Transfer">بینک ٹرانسفر (Bank Transfer)</option>
                         <option value="Debit Card">ڈیبٹ / کریڈٹ کارڈ (Card)</option>
-                        <option value="Customer Credit">ادھار کھاتہ (Customer Credit)</option>
+                        <option value="Customer Credit" id="optCustomerCredit">ادھار کھاتہ (Customer Credit)</option>
                     </select>
                 </div>
 
@@ -235,10 +235,16 @@ require_once __DIR__ . '/includes/header.php';
                         <?php endforeach; ?>
                     </select>
                 </div>
+
+                <!-- Walk-in Customer Credit Warning Notice -->
+                <div id="walkinCreditWarning" class="alert alert-danger py-2 px-3 small d-none mb-3">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    <strong>عام خریدار (Walk-in) کے لیے ادھار ممکن نہیں ہے۔</strong> پورا کیش وصول کریں یا کھاتہ دار گاہک منتخب کریں۔
+                </div>
             </div>
             <div class="modal-footer bg-light">
                 <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">منسوخ</button>
-                <button type="button" class="btn btn-success fw-bold px-4" onclick="processSale()">
+                <button type="button" class="btn btn-success fw-bold px-4" id="btnSubmitSale" onclick="processSale()">
                     <i class="bi bi-printer-fill me-1"></i> محفوظ اور پرنٹ کریں (F4)
                 </button>
             </div>
