@@ -41,123 +41,163 @@ $footer_note = get_setting('receipt_footer', 'تبدیلی یا واپسی 3 د�
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Courier New', Courier, monospace, Tahoma, Arial;
-            line-height: 1.6;
+            font-family: Arial, "Helvetica Neue", Helvetica, "Segoe UI", Tahoma, sans-serif;
+            font-weight: 700 !important;
+            color: #000000 !important;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: geometricPrecision;
+            line-height: 1.35;
         }
         body {
             background-color: #f1f5f9;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         .no-print {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             display: flex;
-            gap: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         .btn {
             background: #166534;
-            color: white;
+            color: #ffffff !important;
             border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
+            padding: 7px 14px;
+            border-radius: 5px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 700 !important;
             text-decoration: none;
-            font-size: 14px;
+            font-size: 13px;
         }
         .btn-outline {
-            background: white;
-            color: #166534;
+            background: #ffffff;
+            color: #166534 !important;
             border: 1px solid #166534;
         }
         .receipt-container {
-            background: white;
-            padding: 15px;
+            background: #ffffff;
+            padding: 8px 4px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
         
-        /* 80mm roll */
-        .width-80mm {
-            width: 78mm;
-            font-size: 12px;
-        }
-        /* 58mm roll */
+        /* Thermal Width Standards */
+        /* 58mm (2-inch roll) -> 48mm printable */
         .width-58mm {
-            width: 56mm;
-            font-size: 10.5px;
+            width: 48mm;
+            max-width: 48mm;
+            font-size: 10px;
         }
-        /* A4 invoice */
+        /* 80mm (3-inch roll) -> 72mm printable */
+        .width-80mm {
+            width: 72mm;
+            max-width: 72mm;
+            font-size: 11.5px;
+        }
+        /* A4 standard invoice */
         .width-a4 {
             width: 210mm;
             min-height: 297mm;
-            padding: 40px;
-            font-size: 14px;
+            padding: 30px;
+            font-size: 13px;
         }
 
         .text-center { text-align: center; }
         .text-start { text-align: right; }
         .text-end { text-align: left; }
-        .fw-bold { font-weight: bold; }
+        .fw-bold { font-weight: 700 !important; }
         
         .header {
             text-align: center;
-            border-bottom: 1px dashed #000;
-            padding-bottom: 8px;
-            margin-bottom: 8px;
+            border-bottom: 2px dashed #000000;
+            padding-bottom: 6px;
+            margin-bottom: 6px;
         }
         .store-title {
-            font-size: 1.25em;
-            font-weight: bold;
-            line-height: 1.3;
+            font-size: 1.35em;
+            font-weight: 700 !important;
+            line-height: 1.25;
+            margin-bottom: 2px;
         }
         .meta-table, .items-table, .total-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         .items-table th {
-            border-top: 1px dashed #000;
-            border-bottom: 1px dashed #000;
-            padding: 4px 2px;
+            border-top: 2px dashed #000000;
+            border-bottom: 2px dashed #000000;
+            padding: 4px 1px;
             text-align: right;
+            font-size: 1em;
         }
         .items-table td {
-            padding: 4px 2px;
+            padding: 3px 1px;
             vertical-align: top;
         }
         .total-table td {
             padding: 2px 0;
         }
         .grand-row {
-            border-top: 1px dashed #000;
-            border-bottom: 1px dashed #000;
-            font-size: 1.15em;
-            font-weight: bold;
+            border-top: 2px dashed #000000;
+            border-bottom: 2px dashed #000000;
+            font-size: 1.2em;
+        }
+        .grand-row td {
+            padding: 4px 0;
         }
         .footer {
-            border-top: 1px dashed #000;
-            padding-top: 8px;
+            border-top: 2px dashed #000000;
+            padding-top: 6px;
+            margin-top: 4px;
             text-align: center;
             font-size: 0.9em;
         }
 
         @media print {
-            body {
-                background: white;
-                padding: 0;
+            html, body {
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+                color: #000000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+                width: 100% !important;
+                height: auto !important;
             }
             .no-print {
                 display: none !important;
             }
             .receipt-container {
-                box-shadow: none;
-                padding: 0;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 auto !important;
+                display: block !important;
+                visibility: visible !important;
+                background: #ffffff !important;
+            }
+            .width-58mm {
+                width: 48mm !important;
+                max-width: 48mm !important;
+            }
+            .width-80mm {
+                width: 72mm !important;
+                max-width: 72mm !important;
+            }
+            .width-a4 {
+                width: 100% !important;
+                max-width: 210mm !important;
+                padding: 10mm !important;
+            }
+            @page {
                 margin: 0;
+                size: auto;
             }
         }
-    </style>
 </head>
 <body>
 
@@ -246,8 +286,8 @@ $footer_note = get_setting('receipt_footer', 'تبدیلی یا واپسی 3 د�
         <?php endif; ?>
         <?php if ($sale['balance_amount'] > 0): ?>
         <tr>
-            <td style="color: red;">ادھار کھاتہ (Balance Due):</td>
-            <td class="text-end fw-bold" style="color: red;">Rs. <?php echo number_format($sale['balance_amount'], 2); ?></td>
+            <td style="color: #000000 !important;">ادھار کھاتہ (Balance Due):</td>
+            <td class="text-end fw-bold" style="color: #000000 !important;">Rs. <?php echo number_format($sale['balance_amount'], 2); ?></td>
         </tr>
         <?php if ($sale['customer_id'] > 0): ?>
         <tr>
