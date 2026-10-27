@@ -198,6 +198,7 @@ $footer_note = get_setting('receipt_footer', 'تبدیلی یا واپسی 3 د�
                 size: auto;
             }
         }
+    </style>
 </head>
 <body>
 
