@@ -4,6 +4,8 @@ if (!defined('APP_INIT')) define('APP_INIT', true);
 require_once __DIR__ . '/config/app.php';
 require_login();
 
+header("Content-Type: text/html; charset=utf-8");
+
 $sale_id = (int)($_GET['id'] ?? 0);
 $auto_print = isset($_GET['auto_print']);
 $format = $_GET['format'] ?? get_setting('receipt_printer_type', '80mm'); // 80mm, 58mm, a4
@@ -15,20 +17,21 @@ $sale = db_fetch_one("SELECT s.*, u.full_name AS cashier_name, c.name AS cust_na
     WHERE s.id = $sale_id");
 
 if (!$sale) {
-    die("Invoice not found! Ø¨Ù„ Ù†ÛÛŒÚº Ù…Ù„Ø§Û”");
+    die("Invoice not found! بل نہیں ملا۔");
 }
 
 $items = db_fetch_all("SELECT * FROM sale_items WHERE sale_id = $sale_id");
 
-$store_name = get_setting('store_name_ur', 'Ø§Ù„Ù…Ø¯ÛŒÙ†Û Ú©Ø±ÛŒØ§Ù†Û Ø§Ø³Ù¹ÙˆØ±') . '<br><small>' . get_setting('store_name_en', 'Al-Madina Kiryana Store') . '</small>';
+$store_name = get_setting('store_name_ur', 'المدینہ کریانہ اسٹور') . '<br><small>' . get_setting('store_name_en', 'Al-Madina Kiryana Store') . '</small>';
 $store_phone = get_setting('phone', '0300-1234567');
-$store_address = get_setting('address_ur', 'Ø¯Ú©Ø§Ù† Ù†Ù…Ø¨Ø± 12ØŒ Ù…ÛŒÙ† Ø¨Ø§Ø²Ø§Ø±ØŒ Ù¾Ø§Ú©Ø³ØªØ§Ù†');
-$footer_note = get_setting('receipt_footer', 'ØªØ¨Ø¯ÛŒÙ„ÛŒ ÛŒØ§ ÙˆØ§Ù¾Ø³ÛŒ 3 Ø¯Ù† Ú©Û’ Ø§Ù†Ø¯Ø± Ø¨Ù„ Ú©Û’ Ø³Ø§ØªÚ¾ Ù…Ù…Ú©Ù† ÛÛ’Û” Ø´Ú©Ø±ÛŒÛ!');
+$store_address = get_setting('address_ur', 'دکان نمبر 12، مین بازار، پاکستان');
+$footer_note = get_setting('receipt_footer', 'تبدیلی یا واپسی 3 دن کے اندر بل کے ساتھ ممکن ہے۔ شکریہ!');
 ?>
 <!DOCTYPE html>
 <html lang="ur" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Invoice #<?php echo $sale['invoice_no']; ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -141,43 +144,17 @@ $footer_note = get_setting('receipt_footer', 'ØªØ¨Ø¯ÛŒÙ„ÛŒ ÛŒØ§
         }
 
         @media print {
-            html, body {
-                background: #ffffff !important;
-                background-color: #ffffff !important;
-                color: #000000 !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                display: block !important;
-                width: 100% !important;
-                height: auto !important;
+            body {
+                background: white;
+                padding: 0;
             }
             .no-print {
                 display: none !important;
             }
             .receipt-container {
-                box-shadow: none !important;
-                padding: 2px !important;
-                margin: 0 auto !important;
-                display: block !important;
-                visibility: visible !important;
-                background: #ffffff !important;
-            }
-            .width-80mm {
-                width: 78mm !important;
-                max-width: 100% !important;
-            }
-            .width-58mm {
-                width: 56mm !important;
-                max-width: 100% !important;
-            }
-            .width-a4 {
-                width: 100% !important;
-                max-width: 210mm !important;
-                padding: 10mm !important;
-            }
-            @page {
+                box-shadow: none;
+                padding: 0;
                 margin: 0;
-                size: auto;
             }
         }
     </style>
@@ -185,11 +162,11 @@ $footer_note = get_setting('receipt_footer', 'ØªØ¨Ø¯ÛŒÙ„ÛŒ ÛŒØ§
 <body>
 
 <div class="no-print">
-    <button onclick="window.print()" class="btn">ðŸ–¨ï¸ Ù¾Ø±Ù†Ù¹ Ú©Ø±ÛŒÚº (Print)</button>
-    <a href="?id=<?php echo $sale_id; ?>&format=80mm" class="btn <?php echo $format == '80mm' ? '' : 'btn-outline'; ?>">80mm ØªÚ¾Ø±Ù…Ù„</a>
-    <a href="?id=<?php echo $sale_id; ?>&format=58mm" class="btn <?php echo $format == '58mm' ? '' : 'btn-outline'; ?>">58mm ØªÚ¾Ø±Ù…Ù„</a>
-    <a href="?id=<?php echo $sale_id; ?>&format=a4" class="btn <?php echo $format == 'a4' ? '' : 'btn-outline'; ?>">A4 Ø§Ù†ÙˆØ§Ø¦Ø³</a>
-    <button onclick="window.close()" class="btn btn-outline">Ø¨Ù†Ø¯ Ú©Ø±ÛŒÚº (Close)</button>
+    <button onclick="window.print()" class="btn">🖨️ پرنٹ کریں (Print)</button>
+    <a href="?id=<?php echo $sale_id; ?>&format=80mm" class="btn <?php echo $format == '80mm' ? '' : 'btn-outline'; ?>">80mm تھرمل</a>
+    <a href="?id=<?php echo $sale_id; ?>&format=58mm" class="btn <?php echo $format == '58mm' ? '' : 'btn-outline'; ?>">58mm تھرمل</a>
+    <a href="?id=<?php echo $sale_id; ?>&format=a4" class="btn <?php echo $format == 'a4' ? '' : 'btn-outline'; ?>">A4 انوائس</a>
+    <button onclick="window.close()" class="btn btn-outline">بند کریں (Close)</button>
 </div>
 
 <div class="receipt-container width-<?php echo $format; ?>" id="receiptArea">
@@ -197,22 +174,22 @@ $footer_note = get_setting('receipt_footer', 'ØªØ¨Ø¯ÛŒÙ„ÛŒ ÛŒØ§
     <div class="header">
         <div class="store-title"><?php echo $store_name; ?></div>
         <div><?php echo htmlspecialchars($store_address); ?></div>
-        <div>ÙÙˆÙ†: <?php echo htmlspecialchars($store_phone); ?></div>
+        <div>فون: <?php echo htmlspecialchars($store_phone); ?></div>
     </div>
 
     <!-- Invoice Meta -->
     <table class="meta-table">
         <tr>
-            <td class="text-start">Ø¨Ù„ Ù†Ù…Ø¨Ø±: <strong><?php echo $sale['invoice_no']; ?></strong></td>
+            <td class="text-start">بل نمبر: <strong><?php echo $sale['invoice_no']; ?></strong></td>
             <td class="text-end"><?php echo date('d-m-Y h:i A', strtotime($sale['created_at'])); ?></td>
         </tr>
         <tr>
-            <td class="text-start">Ú¯Ø§ÛÚ©: <strong><?php echo htmlspecialchars($sale['customer_name'] ?: 'Ø¹Ø§Ù… Ø®Ø±ÛŒØ¯Ø§Ø±'); ?></strong></td>
-            <td class="text-end">Ú©ÛŒØ´ÛŒØ¦Ø±: <?php echo htmlspecialchars($sale['cashier_name'] ?? 'Admin'); ?></td>
+            <td class="text-start">گاہک: <strong><?php echo htmlspecialchars($sale['cust_name'] ?: ($sale['customer_name'] ?? 'عام خریدار')); ?></strong></td>
+            <td class="text-end">کیشیئر: <?php echo htmlspecialchars($sale['cashier_name'] ?? 'Admin'); ?></td>
         </tr>
         <?php if (!empty($sale['cust_phone'])): ?>
         <tr>
-            <td colspan="2" class="text-start">ÙÙˆÙ†: <?php echo htmlspecialchars($sale['cust_phone']); ?></td>
+            <td colspan="2" class="text-start">فون: <?php echo htmlspecialchars($sale['cust_phone']); ?></td>
         </tr>
         <?php endif; ?>
     </table>
@@ -221,10 +198,10 @@ $footer_note = get_setting('receipt_footer', 'ØªØ¨Ø¯ÛŒÙ„ÛŒ ÛŒØ§
     <table class="items-table">
         <thead>
             <tr>
-                <th style="width: 45%;">Ø¢Ø¦Ù¹Ù…</th>
-                <th class="text-center" style="width: 15%;">ØªØ¹Ø¯Ø§Ø¯</th>
-                <th class="text-center" style="width: 20%;">Ø±ÛŒÙ¹</th>
-                <th class="text-end" style="width: 20%;">Ø±Ù‚Ù…</th>
+                <th style="width: 45%;">آئٹم</th>
+                <th class="text-center" style="width: 15%;">تعداد</th>
+                <th class="text-center" style="width: 20%;">ریٹ</th>
+                <th class="text-end" style="width: 20%;">رقم</th>
             </tr>
         </thead>
         <tbody>
@@ -244,37 +221,37 @@ $footer_note = get_setting('receipt_footer', 'ØªØ¨Ø¯ÛŒÙ„ÛŒ ÛŒØ§
     <!-- Totals Table -->
     <table class="total-table">
         <tr>
-            <td>Ù…ÛŒØ²Ø§Ù† (Subtotal):</td>
+            <td>میزان (Subtotal):</td>
             <td class="text-end">Rs. <?php echo number_format($sale['subtotal'], 2); ?></td>
         </tr>
         <?php if ($sale['discount_amount'] > 0): ?>
         <tr>
-            <td>Ø±Ø¹Ø§ÛŒØª (Discount):</td>
+            <td>رعایت (Discount):</td>
             <td class="text-end">- Rs. <?php echo number_format($sale['discount_amount'], 2); ?></td>
         </tr>
         <?php endif; ?>
         <tr class="grand-row">
-            <td><strong>Ú©Ù„ Ø±Ù‚Ù… (Grand Total):</strong></td>
+            <td><strong>کل رقم (Grand Total):</strong></td>
             <td class="text-end"><strong>Rs. <?php echo number_format($sale['grand_total'], 2); ?></strong></td>
         </tr>
         <tr>
-            <td>ÙˆØµÙˆÙ„ Ø´Ø¯Û (Paid Cash):</td>
+            <td>وصول شدہ (Paid Cash):</td>
             <td class="text-end">Rs. <?php echo number_format($sale['paid_amount'], 2); ?></td>
         </tr>
         <?php if ($sale['change_amount'] > 0): ?>
         <tr>
-            <td>ÙˆØ§Ù¾Ø³ÛŒ Ø¨Ù‚Ø§ÛŒØ§ (Change):</td>
+            <td>واپسی بقایا (Change):</td>
             <td class="text-end fw-bold">Rs. <?php echo number_format($sale['change_amount'], 2); ?></td>
         </tr>
         <?php endif; ?>
         <?php if ($sale['balance_amount'] > 0): ?>
         <tr>
-            <td style="color: red;">Ø§Ø¯Ú¾Ø§Ø± Ú©Ú¾Ø§ØªÛ (Balance Due):</td>
+            <td style="color: red;">ادھار کھاتہ (Balance Due):</td>
             <td class="text-end fw-bold" style="color: red;">Rs. <?php echo number_format($sale['balance_amount'], 2); ?></td>
         </tr>
         <?php if ($sale['customer_id'] > 0): ?>
         <tr>
-            <td>Ù…ÙˆØ¬ÙˆØ¯Û Ú©Ù„ Ú©Ú¾Ø§ØªÛ Ø¨Ù‚Ø§ÛŒØ§:</td>
+            <td>موجودہ کل کھاتہ بقایا:</td>
             <td class="text-end fw-bold">Rs. <?php echo number_format($sale['cust_current_balance'], 2); ?></td>
         </tr>
         <?php endif; ?>
@@ -290,12 +267,9 @@ $footer_note = get_setting('receipt_footer', 'ØªØ¨Ø¯ÛŒÙ„ÛŒ ÛŒØ§
 
 <?php if ($auto_print): ?>
 <script>
-window.addEventListener('load', function() {
-    // Small delay ensures external font & CSS layout are fully computed before print dialog triggers
-    setTimeout(function() {
-        window.print();
-    }, 350);
-});
+window.onload = function() {
+    window.print();
+};
 </script>
 <?php endif; ?>
 
